@@ -1,5 +1,6 @@
 name: Release
 
+# 当推送符合 'v*.*.*' 模式的标签时触发工作流
 on:
   push:
     tags:
@@ -7,36 +8,52 @@ on:
 
 jobs:
   build:
+    # 在最新的 Ubuntu 环境上运行工作流
     runs-on: ubuntu-latest
 
     steps:
+      # 检出代码到 GitHub Actions 运行器中
       - uses: actions/checkout@v4
 
+      # 设置 Go 语言环境
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.22'
 
+      # 构建项目
       - name: Build
         run: make all
 
+      # 创建 GitHub Release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
+          # 使用 GitHub 提供的 GITHUB_TOKEN 进行认证
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # 使用当前标签作为发布标签名
           tag_name: ${{ github.ref }}
+          # 使用当前标签作为发布名称
           release_name: Release ${{ github.ref }}
+          # 发布状态不是草稿
           draft: false
+          # 发布状态不是预发布
           prerelease: false
 
+      # 上传构建的二进制文件到 Release
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
+          # 使用 GitHub 提供的 GITHUB_TOKEN 进行认证
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # 使用 create_release 步骤生成的 upload_url
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+          # 指定要上传的文件路径
           asset_path: ./device-status
+          # 指定上传文件的名称
           asset_name: device-status
+          # 指定上传文件的内容类型
           asset_content_type: application/octet-stream
